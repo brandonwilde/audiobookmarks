@@ -31,7 +31,7 @@ def remove_punctuation(text):
     return text.translate(remove_punc)
 
 
-def download_audio_file(audio_url, headers, tag=''):
+async def download_audio_file(audio_url, headers, tag=''):
     response = requests.get(audio_url, headers=headers)
     # tag = remove_punctuation(audio_url)[-10:]
     if 200 <= response.status_code < 300:
@@ -64,163 +64,126 @@ def download_audio_file(audio_url, headers, tag=''):
             ["Requested", q_start_byte, q_end_byte, ''],
             ["Received", start_byte, end_byte, total_size]
         ]
-        print(f'\nAudio file "{file_name}" downloaded successfully.',flush=True)
-        print(tabulate(byte_data), flush=True)
+        print(file_name, flush=True)
+        # print(tabulate(byte_data), flush=True)
         pass
     else:
         print(f"Failed to download audio file. Status code: {response.status_code}", flush=True)
 
 
-def get_audiobookmarks(title_id='', bookmark_list=[]):
+async def get_audiobookmarks(title_id='', bookmark_list=[]):
     # First run the following command in the terminal:
     # google-chrome --remote-debugging-port=9222
-     with sync_playwright() as p:
-        browser = p.chromium.connect_over_cdp("http://127.0.0.1:9222")
+     async with async_playwright() as p:
+        browser = await p.chromium.connect_over_cdp("http://127.0.0.1:9222")
         context = browser.contexts[0]  # Get the first context
         context.set_default_timeout(7000)
         page = context.pages[0]  # Get the first page
 
         bookmark_num = -1
 
-        def handle_request(route, request):
+        async def handle_request(route, request):
             nonlocal bookmark_num
-            if "mediaclips" in request.url:
-                headers = request.headers
-                audio_url = request.url
-                # print(f"!!!!!Audio URL intercepted: {audio_url}", flush=True)
-                download_audio_file(audio_url, headers, bookmark_num)
-            # else:
-            #     print(f"Request URL: {request.url}", flush=True)
-            route.continue_()
 
-        # def start_interception():
-        #     page.route("**/*", handle_request)
+            audio_url = request.url
+            headers = request.headers
 
-        page.goto("https://www.libbyapp.com/")
+            await download_audio_file(audio_url, headers, bookmark_num)
+            await route.continue_()
 
-        # # For establishing connection
-        # buttons = page.query_selector("ul[class=\"interview-answers\"]")
-        # first_button = buttons.query_selector("li")
-        # first_button.click()
+        await page.goto("https://www.libbyapp.com/")
 
         # Open tags
-        page.click("button[class=\"app-footer-nav-bar-button-tags halo\"]")
+        await page.click("button[class=\"app-footer-nav-bar-button-tags halo\"]")
         
         # Open smart-list of "titles I've borrowed"
-        page.click("text=🧾")
+        await page.click("text=🧾")
 
         # Open the target book
-        page.goto(f"https://libbyapp.com/tags/similar-{title_id}/page-1/{title_id}")       
+        await page.goto(f"https://libbyapp.com/tags/similar-{title_id}/page-1/{title_id}")       
 
         # Open the audiobook player
-        actions = page.query_selector("ul[class=\"title-details-actions-list\"]")
-        open_book = actions.query_selector("li:nth-child(2)")
-        open_book.click()
+        actions = await page.query_selector("ul[class=\"title-details-actions-list\"]")
+        open_book = await actions.query_selector("li:nth-child(2)")
+        await open_book.click()
 
         # page.wait_for_load_state("networkidle") # very slow
         # page.wait_for_load_state("domcontentloaded")
-        page.wait_for_selector("iframe")
+        await page.wait_for_selector("iframe")
         print("Page loaded.", flush=True)
-        # page.expect_response(lambda response: 'audio/mpeg' in response.headers.get('content-type', ''))
 
-        iframe_element = page.query_selector("iframe")
-        # iframe_source = await iframe_element.get_attribute("src")
-        # await page.goto(iframe_source)
+        iframe_element = await page.query_selector("iframe")
+        iframe = await iframe_element.content_frame()
 
-        iframe = iframe_element.content_frame()
-        # iframe_struct = get_structure(iframe)
-
-        # iframe.wait_for_selector("button[class=\"nav-action-item-button halo\"]")
-        
         # close pop-up to synchronise audiobook if it exists
         try:
             print("Checking for pop-up.", flush=True)
-            popup = iframe.query_selector("button[class=\"notifier-close-button halo\"]")
-            if not popup.get_attribute('aria-hidden') == 'true':
+            popup = await iframe.query_selector("button[class=\"notifier-close-button halo\"]")
+            if not await popup.get_attribute('aria-hidden') == 'true':
                 print("Pop-up found.", flush=True)
-                popup.click()
+                await popup.click()
         except:
             print("No pop-up found.", flush=True)
             pass
-        bookmarks_button = iframe.query_selector("button[class=\"nav-action-item-button halo\"]")
-        bookmarks_button.click()
 
-        def get_bookmarks():
-            return iframe.query_selector_all("li[class=\"marks-dialog-mark data-mark-type_bookmark data-mark-color_none halos-anchor\"]")
+        time.sleep(3)
+        bookmarks_button = await iframe.query_selector("button[class=\"nav-action-item-button halo\"]")
+        await bookmarks_button.click()
+
+        async def get_bookmarks():
+            return await iframe.query_selector_all("li[class=\"marks-dialog-mark data-mark-type_bookmark data-mark-color_none halos-anchor\"]")
         
-        bookmarks = get_bookmarks()
+        bookmarks = await get_bookmarks()
         assert len(bookmarks) == len(bookmark_list), "Number of bookmarks do not match."
 
         # Intercept network requests
-        page.route("**://*mediaclips*/**", handle_request)
+        await page.route("**://*mediaclips*/**", handle_request)
+        time.sleep(5)
 
         # for bookmark_num in range(1,len(bookmarks)+1):
         for bookmark_num in range(len(bookmarks),0,-1):
-            bookmark_popup = iframe.query_selector("div[class=\"navigation-shades\"]")
-            if not bookmark_popup.text_content():
-                bookmarks_button.click()
-                bookmarks = get_bookmarks()
+            if 2 < bookmark_num < 25:
+                print(f"Skipping bookmark {bookmark_num}.", flush=True)
+                continue
+
+            bookmark_popup = await iframe.query_selector("div[class=\"navigation-shades\"]")
+            if not await bookmark_popup.text_content():
+                await bookmarks_button.click()
+                bookmarks = await get_bookmarks()
             # if not iframe.query_selector("div[class=\"shibui-shade marks-shade shibui-shade-n is-visible\"]"):
             #     bookmarks_button.click()
 
             bookmark = bookmarks[bookmark_num-1]
             print(f"Clicked bookmark {bookmark_num}.", flush=True)
-            bookmark.click()
-            time.sleep(1)
+            await bookmark.click()
+            time.sleep(5)
+            chapter = await iframe.query_selector("div[class=\"chapter-bar-title\"]")
+            chapter_num = await chapter.text_content()
+            prog_in_chapter = await iframe.query_selector("span[class=\"chapter-bar-prev-text\"]")
+            prog_text = await prog_in_chapter.text_content()
+            print(f"Bookmark {bookmark_num}: {chapter_num}, {prog_text.lower()} in.", flush=True)
+            print(flush=True)
             # page.expect_response("**://*mediaclips*/**")
             # page.expect_request_finished("**://*mediaclips*/**")
 
-        
+        # Get bookmarks missed for whatever reason
+        for bookmark_num in range(1,len(bookmarks)+1):
+            if not os.path.exists(f"audio_file_{bookmark_num}.mp3"):
+                bookmark_popup = await iframe.query_selector("div[class=\"navigation-shades\"]")
+                if not await bookmark_popup.text_content():
+                    await bookmarks_button.click()
+                    bookmarks = await get_bookmarks()
 
-        # for bookmark_num,bookmark in enumerate(bookmarks):
-        #     # start_interception()
-        #     time.sleep(1)
-        #     try:
-        #         bookmark.click()
-        #     except:
-        #         bookmarks_button.click()
-        #         bookmark.click()
-
-            # with page.expect_response(lambda response: 'audio/mpeg' in response.headers.get('content-type', '')) as response_info:
-            #     bookmark.click()
-            #     print(f"Bookmark {bookmark_num+1} clicked.", flush=True)
-            # response = response_info.value
-
-            # with page.expect_response(lambda response: "odrmediaclips" in response.url) as response_info:
-            #     bookmark.click()
-            #     print(f"Bookmark {bookmark_num+1} clicked.", flush=True)
-            # response = response_info.value         
-
-            # # Get the response and download the file
-            # content = response.body()
-            # tag = remove_punctuation(audio_url)[-10:]
-            # file_name = f"audio_file_{tag}.mp3"
-            # with open(file_name, 'wb') as f:
-            #     f.write(content)
-            # print(f"Downloaded: {file_name}")
-
-            # with page.expect_request(lambda req: 'mediaclips' in req.url) as request_info:
-            #     bookmark.click()
-            #     print(f"Bookmark {bookmark_num+1} clicked.", flush=True)
-            # req = request_info.value
-            # download_audio_file(req.url, req.headers)
-            # time.sleep(1)
-
-
-            # # Wait for the network request to complete
-            # while True:
-            #     request = await page.wait_for_event("requestfinished")
-            #     print(f"Request for {request.url} finished.", flush=True)
-            #     if "mediaclips" in request.url:
-            #         # Get request URL and headers here
-            #         audio_url = request.url
-            #         headers = request.headers
-            #         print(f"***Request for {audio_url} finished.", flush=True)
-            #         await download_audio_file(audio_url, headers, bookmark_num+1)
-            #         break  # Exit the loop once the correct request is found
-
-
-        # page.text_content
+                bookmark = bookmarks[bookmark_num-1]
+                print(f"Downloading bookmark {bookmark_num}.", flush=True)
+                await bookmark.click()
+                time.sleep(5)
+                chapter = await iframe.query_selector("div[class=\"chapter-bar-title\"]")
+                chapter_num = await chapter.text_content()
+                prog_in_chapter = await iframe.query_selector("span[class=\"chapter-bar-prev-text\"]")
+                prog_text = await prog_in_chapter.text_content()
+                print(f"Bookmark {bookmark_num}: {chapter_num}, {prog_text.lower()} in.", flush=True)
+                print(flush=True)
 
         # Close the browser
         browser.close()
@@ -253,8 +216,8 @@ def get_structure(element):
     return structure
 
 # asyncio.run(start_browser())
-# asyncio.run(reconnect_browser())
-get_audiobookmarks(bookmark_list=ordered, title_id=title_id)
+asyncio.run(get_audiobookmarks(bookmark_list=ordered, title_id=title_id))
+# get_audiobookmarks(bookmark_list=ordered, title_id=title_id)
 
 # page_structure = page.evaluate('''() => {
 #     const getElementInfo = (element) => {
