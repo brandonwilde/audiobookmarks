@@ -1,14 +1,19 @@
 import asyncio
 import json
+import os
 import time
 import requests
 
 from playwright.async_api import async_playwright
 from playwright.sync_api import sync_playwright
+from tabulate import tabulate
 
 
 # First run the following command in the terminal:
 # google-chrome --remote-debugging-port=9222
+
+# audio files with a low start byte (5 digits) are usually the full chapter (minus the chapter number and title)
+# others are bookmarks (plus 2-3 seconds before the bookmark)
 
 async def start_browser():
     async with async_playwright() as p:
@@ -31,9 +36,37 @@ def download_audio_file(audio_url, headers, tag=''):
     # tag = remove_punctuation(audio_url)[-10:]
     if 200 <= response.status_code < 300:
         file_name = f"audio_file_{tag}.mp3"
+        if os.path.exists(file_name):
+            file_name = f"audio_file_{tag}_a.mp3"
+            if os.path.exists(file_name):
+                file_name = f"audio_file_{tag}_b.mp3"
+                if os.path.exists(file_name):
+                    file_name = f"audio_file_{tag}_c.mp3"
+                    if os.path.exists(file_name):
+                        file_name = f"audio_file_{tag}_extra.mp3"
         with open(file_name, "wb") as f:
             f.write(response.content)
-        print(f'Audio file "{file_name}" downloaded successfully.', flush=True)
+              
+        # Requested content range
+        q_content_range = headers['range']
+        q_byte_range = q_content_range.split('=')[1]
+        q_start_byte, q_end_byte = q_byte_range.split('-')
+        q_start_byte, q_end_byte = int(q_start_byte) if q_start_byte else '', int(q_end_byte) if q_end_byte else ''
+
+        # Received content range
+        content_range = response.headers['content-range']
+        range_info, total_size = content_range.split('/')
+        byte_range = range_info.split(' ')[1]
+        start_byte, end_byte = map(int, byte_range.split('-'))
+        total_size = int(total_size)
+        byte_data = [
+            ["Req/Rec", "Start", "End", "Total"],
+            ["Requested", q_start_byte, q_end_byte, ''],
+            ["Received", start_byte, end_byte, total_size]
+        ]
+        print(f'\nAudio file "{file_name}" downloaded successfully.',flush=True)
+        print(tabulate(byte_data), flush=True)
+        pass
     else:
         print(f"Failed to download audio file. Status code: {response.status_code}", flush=True)
 
@@ -51,20 +84,17 @@ def get_audiobookmarks(title_id='', bookmark_list=[]):
 
         def handle_request(route, request):
             nonlocal bookmark_num
-            # if "mediaclips" in request.url:
-            headers = request.headers
-            audio_url = request.url
-            print(f"!!!!!Audio URL intercepted: {audio_url}", flush=True)
-            download_audio_file(audio_url, headers, bookmark_num)
+            if "mediaclips" in request.url:
+                headers = request.headers
+                audio_url = request.url
+                # print(f"!!!!!Audio URL intercepted: {audio_url}", flush=True)
+                download_audio_file(audio_url, headers, bookmark_num)
             # else:
             #     print(f"Request URL: {request.url}", flush=True)
             route.continue_()
 
-        def start_interception():
-            page.route("**/*", handle_request)
-
-        # Intercept network requests
-        page.route("**://*mediaclips*/**", handle_request)
+        # def start_interception():
+        #     page.route("**/*", handle_request)
 
         page.goto("https://www.libbyapp.com/")
 
@@ -121,7 +151,11 @@ def get_audiobookmarks(title_id='', bookmark_list=[]):
         bookmarks = get_bookmarks()
         assert len(bookmarks) == len(bookmark_list), "Number of bookmarks do not match."
 
-        for bookmark_num in range(1,len(bookmarks)+1):
+        # Intercept network requests
+        page.route("**://*mediaclips*/**", handle_request)
+
+        # for bookmark_num in range(1,len(bookmarks)+1):
+        for bookmark_num in range(len(bookmarks),0,-1):
             bookmark_popup = iframe.query_selector("div[class=\"navigation-shades\"]")
             if not bookmark_popup.text_content():
                 bookmarks_button.click()
@@ -130,9 +164,12 @@ def get_audiobookmarks(title_id='', bookmark_list=[]):
             #     bookmarks_button.click()
 
             bookmark = bookmarks[bookmark_num-1]
+            print(f"Clicked bookmark {bookmark_num}.", flush=True)
             bookmark.click()
-            print(f"Bookmark {bookmark_num} clicked.", flush=True)
             time.sleep(1)
+            # page.expect_response("**://*mediaclips*/**")
+            # page.expect_request_finished("**://*mediaclips*/**")
+
         
 
         # for bookmark_num,bookmark in enumerate(bookmarks):
