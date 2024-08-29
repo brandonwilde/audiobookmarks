@@ -1,0 +1,2 @@
+aitools==0.1
+playwright==1.46.0
