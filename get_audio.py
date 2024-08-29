@@ -5,6 +5,7 @@ import requests
 
 from playwright.async_api import async_playwright
 
+BROWSER_DATA_DIRECTORY = os.environ.get("BROWSER_DATA_DIRECTORY", "./user_data")
 
 # First run the following command in the terminal:
 # google-chrome --remote-debugging-port=9222
@@ -15,7 +16,7 @@ from playwright.async_api import async_playwright
 async def start_browser():
     async with async_playwright() as p:
         browser = await p.chromium.launch_persistent_context(
-            user_data_dir="/home/brandon/Projects/audiobookmarks/user_data",  # Specify a directory to store user data
+            user_data_dir=BROWSER_DATA_DIRECTORY,  # Specify a directory to store user data
             headless=False,
             args=["--remote-debugging-port=9222"]
         )
@@ -70,14 +71,6 @@ async def get_audiobookmarks(title_id='', bookmark_list=[], download_dir=''):
 
             await download_audio_file(audio_url, headers, bookmark_num, dir_path=download_dir)
             await route.continue_()
-
-        # await page.goto("https://www.libbyapp.com/")
-
-        # # Open tags
-        # await page.click("button[class=\"app-footer-nav-bar-button-tags halo\"]")
-        
-        # # Open smart-list of "titles I've borrowed"
-        # await page.click("text=🧾")
 
         # Open the target book
         await page.goto(f"https://libbyapp.com/tags/similar-{title_id}/page-1/{title_id}")       
