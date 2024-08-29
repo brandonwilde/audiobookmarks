@@ -7,14 +7,22 @@ from create_notes import write_notes
 from get_audio import get_audiobookmarks
 from transcribe import transcribe_audio_file
 
+NOTES_DIRECTORY = os.environ.get("NOTES_DIRECTORY", "")
+
 
 data_directory = "data"
-book_name = "world_upside_down"
+book_name = "incognito"
 book_dir = os.path.join(data_directory, book_name)
 book_audio_dir = os.path.join(book_dir, "audio")
 book_file_name = book_name + ".json"
 book_file = os.path.join(book_dir, book_file_name)
 updated_file = book_file.replace(".json", "_updated.json")
+
+if not os.path.exists(book_dir):
+    os.makedirs(book_dir)
+if not os.path.exists(book_audio_dir):
+    os.makedirs(book_audio_dir)
+# start with book_file in the book directory
 
 with open(book_file, "r") as f:
     bookmarks_data = json.load(f)
@@ -55,7 +63,6 @@ with open(updated_file, 'w') as f:
 
 
 # Save notes to Obsidian
-notes_directory = "/home/brandon/ObsidianNotes/Books"
 with open(updated_file, 'r') as f:
     data = json.load(f)
-write_notes(data, notes_directory)
+write_notes(data, NOTES_DIRECTORY)

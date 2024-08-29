@@ -153,7 +153,7 @@ async def get_audiobookmarks(title_id='', bookmark_list=[], download_dir=''):
 
         # Get bookmarks missed for whatever reason
         for bookmark_num in range(len(bookmarks),0,-1):
-            if not os.path.exists(f"audio_file_{bookmark_num}.mp3"):
+            if not os.path.exists(os.path.join(download_dir, f"audio_file_{bookmark_num}.mp3")):
                 bookmark_list = await select_bookmark(bookmarks_button, bookmark_num, bookmark_list)
 
         # Close the browser
