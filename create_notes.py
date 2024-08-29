@@ -15,7 +15,7 @@ def write_notes(bookmarks_data, notes_dir):
             f.write(f"### Bookmark {bookmark['bookmark_num']}\n")
             if 'note' in bookmark:
                 f.write(f"#### {bookmark['note']}\n")
-            f.write(f"{bookmark['5m_transcript']}\n\n")
+            f.write(f"{bookmark['quote']}\n\n")
             f.write(f"---\n\n")
 
     print(f"Notes written to {notes_file}")
