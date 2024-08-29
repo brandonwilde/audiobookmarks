@@ -26,6 +26,8 @@ Below is a transcribed segment of an audiobook.
 <\book_segment>
 
 Book formatting has been lost in the transcription, so please add formatting back in as appropriate to make the text more readable. If there are errors or incomplete sentences, use ellipses (...) to indicate where content has been removed.
+
+Only respond with the formatted transcription; do not include any additional comments, disclaimers, or conversation in your response.
 """
 
 def clean_transcripts(data):
@@ -43,4 +45,4 @@ def clean_transcripts(data):
             prompt_wo_note = prompt_wo_note_template.format(transcript=transcript)
             cleaned_transcript = prompt_llm(prompt_wo_note, max_tokens=2000)
         bookmark['quote'] = cleaned_transcript
-    return bookmarks
+    return data
