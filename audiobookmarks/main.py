@@ -2,10 +2,10 @@ import asyncio
 import json
 import os
 
-from clean_transcripts import clean_transcripts
-from create_notes import write_notes
-from get_audio import get_audiobookmarks
-from transcribe import transcribe_audio_file
+from components.clean_transcripts import clean_transcripts
+from components.create_notes import write_notes
+from components.get_audio import get_audiobookmarks
+from components.transcribe import transcribe_audio_file
 
 NOTES_DIRECTORY = os.environ.get("NOTES_DIRECTORY", "")
 
