@@ -10,13 +10,13 @@ def write_notes(bookmarks_data, notes_dir):
 
     notes_file = os.path.join(notes_dir, f"{title}.md")
     with open(notes_file, "w") as f:
-        f.write(f"## Author: {author}\n\n")
+        f.write(f"## Author: #{author.replace(' ','')}\n\n")
         for bookmark in bookmarks:
             f.write(f"### Bookmark {bookmark['bookmark_num']}\n")
             if 'note' in bookmark:
                 f.write(f"#### {bookmark['note']}\n")
             f.write(f"{bookmark['quote']}\n\n")
             f.write(f"---\n\n")
-
+    
     print(f"Notes written to {notes_file}")
     return
