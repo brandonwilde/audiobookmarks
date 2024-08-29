@@ -28,7 +28,7 @@ def remove_punctuation(text):
     return text.translate(remove_punc)
 
 
-async def download_audio_file(audio_url, headers, tag=''):
+async def download_audio_file(audio_url, headers, tag='', dir_path=''):
     '''
     Downloads the audio file from the given URL.
     '''
@@ -42,14 +42,14 @@ async def download_audio_file(audio_url, headers, tag=''):
                 file_name = f"audio_file_{tag}_b.mp3"
                 if os.path.exists(file_name):
                     file_name = f"audio_file_{tag}_extra.mp3"
-        with open(file_name, "wb") as f:
+        with open(os.path.join(dir_path, file_name), "wb") as f:
             f.write(response.content)
         print(file_name, flush=True)
     else:
         print(f"Failed to download audio file. Status code: {response.status_code}", flush=True)
 
 
-async def get_audiobookmarks(title_id='', bookmark_list=[]):
+async def get_audiobookmarks(title_id='', bookmark_list=[], download_dir=''):
     # First run the following command in the terminal:
     # google-chrome --remote-debugging-port=9222
     async with async_playwright() as p:
@@ -68,16 +68,16 @@ async def get_audiobookmarks(title_id='', bookmark_list=[]):
             audio_url = request.url
             headers = request.headers
 
-            await download_audio_file(audio_url, headers, bookmark_num)
+            await download_audio_file(audio_url, headers, bookmark_num, dir_path=download_dir)
             await route.continue_()
 
-        await page.goto("https://www.libbyapp.com/")
+        # await page.goto("https://www.libbyapp.com/")
 
-        # Open tags
-        await page.click("button[class=\"app-footer-nav-bar-button-tags halo\"]")
+        # # Open tags
+        # await page.click("button[class=\"app-footer-nav-bar-button-tags halo\"]")
         
-        # Open smart-list of "titles I've borrowed"
-        await page.click("text=🧾")
+        # # Open smart-list of "titles I've borrowed"
+        # await page.click("text=🧾")
 
         # Open the target book
         await page.goto(f"https://libbyapp.com/tags/similar-{title_id}/page-1/{title_id}")       
