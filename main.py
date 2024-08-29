@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 
+from create_notes import write_notes
 from get_audio import get_audiobookmarks
 from transcribe import transcribe_audio_file
 
@@ -23,7 +24,8 @@ ordered = sorted(bookmarks, key=lambda x: x['percent'])
 
 # Get audio files and bookmark position info
 updated_bookmarks = asyncio.run(
-    get_audiobookmarks(bookmark_list=ordered, title_id=title_id, download_dir=book_audio_dir))
+    get_audiobookmarks(bookmark_list=ordered, title_id=title_id, download_dir=book_audio_dir)
+)
 
 bookmarks_data['bookmarks'] = updated_bookmarks
 updated_file = book_file.replace(".json", "_updated.json")
@@ -44,4 +46,6 @@ for bookmark in bookmarks:
         json.dump(data, f, indent=4)
 
 
+# Save notes to Obsidian
 notes_directory = "/home/brandon/ObsidianNotes/Books"
+write_notes(data, notes_directory)
