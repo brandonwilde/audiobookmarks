@@ -6,8 +6,9 @@ import requests
 from playwright.async_api import async_playwright
 
 BROWSER_DATA_DIRECTORY = os.environ.get("BROWSER_DATA_DIRECTORY", "./user_data")
+DEBUG_MODE = False if os.environ.get("DEBUG_MODE",'false').lower() not in ['true','t','yes','y'] else True
 
-# First run the following command in the terminal:
+# If running in debug mode, first run the following command in the terminal:
 # google-chrome --remote-debugging-port=9222
 
 # audio files with a low start byte (5 digits) are usually the full chapter (minus the chapter number and title)
@@ -54,8 +55,14 @@ async def get_audiobookmarks(title_id='', bookmark_list=[], download_dir=''):
     # First run the following command in the terminal:
     # google-chrome --remote-debugging-port=9222
     async with async_playwright() as p:
-        browser = await p.chromium.connect_over_cdp("http://127.0.0.1:9222")
-        context = browser.contexts[0]
+        if DEBUG_MODE:
+            browser = await p.chromium.connect_over_cdp("http://127.0.0.1:9222")
+            context = browser.contexts[0]
+        else:
+            context = await p.chromium.launch_persistent_context(
+                user_data_dir=BROWSER_DATA_DIRECTORY,  # Specify a directory to store user data
+                headless=True,
+            )
         context.set_default_timeout(7000)
         page = context.pages[0]
 
