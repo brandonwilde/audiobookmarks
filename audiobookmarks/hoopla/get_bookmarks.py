@@ -6,22 +6,9 @@ from playwright.sync_api import sync_playwright
 
 BROWSER_DATA_DIRECTORY = os.environ.get("BROWSER_DATA_DIRECTORY", "./user_data")
 DEBUG_MODE = False if os.environ.get("DEBUG_MODE",'false').lower() not in ['true','t','yes','y'] else True
-NOTES_DIRECTORY = os.environ.get("NOTES_DIRECTORY", "")
 
 # If running in debug mode, first run the following command in the terminal:
 # google-chrome --remote-debugging-port=9222
-
-data_directory = "data"
-book_name = "what_iranians_want"
-book_dir = os.path.join(data_directory, book_name)
-book_audio_dir = os.path.join(book_dir, "audio")
-book_file_name = book_name + ".json"
-book_file = os.path.join(book_dir, book_file_name)
-updated_file = book_file.replace(".json", "_updated.json")
-
-if not os.path.exists(book_dir):
-    os.makedirs(book_dir)
-
 
 def get_bookmarks(title='', download_dir=''):
     '''
@@ -72,10 +59,3 @@ def get_bookmarks(title='', download_dir=''):
         page.get_by_role('button', name='Expand').click()
 
         page.get_by_role('button', name='Bookmarks Menu').click()
-
-
-
-get_bookmarks(
-    title='what_iranians_want',
-    download_dir=book_dir
-)
