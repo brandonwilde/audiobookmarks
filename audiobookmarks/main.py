@@ -2,16 +2,16 @@ import asyncio
 import json
 import os
 
-from components.clean_transcripts import clean_transcripts
-from components.create_notes import write_notes
-from components.get_audio import get_audiobookmarks
-from components.transcribe import transcribe_audio_file
+from libby.clean_transcripts import clean_transcripts
+from libby.create_notes import write_notes
+from libby.get_audio import get_audiobookmarks
+from libby.transcribe import transcribe_audio_file
 
 NOTES_DIRECTORY = os.environ.get("NOTES_DIRECTORY", "")
 
 
 data_directory = "data"
-book_name = "incognito"
+book_name = "world_upside_down_2"
 book_dir = os.path.join(data_directory, book_name)
 book_audio_dir = os.path.join(book_dir, "audio")
 book_file_name = book_name + ".json"
