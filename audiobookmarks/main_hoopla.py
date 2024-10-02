@@ -14,10 +14,8 @@ NOTES_DIRECTORY = os.environ.get("NOTES_DIRECTORY", "")
 data_directory = "data"
 book_name = "what_iranians_want"
 book_dir = os.path.join(data_directory, book_name)
-book_audio_dir = os.path.join(book_dir, "audio")
-book_file_name = book_name + ".json"
-book_file = os.path.join(book_dir, book_file_name)
-updated_file = book_file.replace(".json", "_updated.json")
+bookmarks_json = os.path.join(book_dir, f"{book_name}_bookmarks.json")
+title_json = os.path.join(book_dir, f"{book_name}_title.json")
 
 if not os.path.exists(book_dir):
     os.makedirs(book_dir)
@@ -28,13 +26,10 @@ get_bookmarks(
     download_dir=book_dir
 )
 
-bookmarks_file = os.path.join(book_dir, "what_iranians_want_bookmarks.json")
-book_info_file = os.path.join(book_dir, "what_iranians_want_title.json")
-
-with open(bookmarks_file, "r") as f:
+with open(bookmarks_json, "r") as f:
     bookmarks_data = json.load(f)['data']['bookmarks']
 
-with open(book_info_file, "r") as f:
+with open(title_json, "r") as f:
     book_info = json.load(f)['data']['title']
     
 write_notes(bookmarks_data, book_info, NOTES_DIRECTORY)

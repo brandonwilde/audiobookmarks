@@ -33,11 +33,9 @@ def get_bookmarks(title='', download_dir=''):
             if "graphql" in response.url:
                 response_body = response.json()
                 data_type = list(response_body['data'].keys())[0]
-                with open(os.path.join(download_dir, f"{title}_{data_type}.json"), "w") as f:
-                    json.dump(response_body, f)
-                
-                if data_type == "bookmarks":
-                    print("Found 'em!")
+                if data_type in ['bookmarks', 'title']:
+                    with open(os.path.join(download_dir, f"{title}_{data_type}.json"), "w") as f:
+                        json.dump(response_body, f)
 
         page.on("response", intercept_response)
 
