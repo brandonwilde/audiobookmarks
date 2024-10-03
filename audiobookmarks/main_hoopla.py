@@ -4,7 +4,7 @@ import re
 import time
 
 from hoopla.get_bookmarks import get_bookmarks
-from audiobookmarks.hoopla.create_notes import write_notes
+from hoopla.create_notes import write_notes
 
 NOTES_DIRECTORY = os.environ.get("NOTES_DIRECTORY", "")
 

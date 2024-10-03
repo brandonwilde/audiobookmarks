@@ -43,7 +43,7 @@ def write_notes(bookmarks, book_info, notes_dir):
                 f.write(f"*({chapter_time} \[{chapter_percent}%\] into chapter, {book_time} \[{book_percent}%\] into book)*\n")
                 if 'note' in bookmark:
                     f.write(f"{bookmark['note']}\n")
-            f.write(f"---\n\n")
+            f.write(f"\n---\n\n")
     
     print(f"Notes written to {notes_file}")
     return
