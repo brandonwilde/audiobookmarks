@@ -163,5 +163,6 @@ cython_debug/
 
 user_data/
 data/
+books/
 
 *.mp3

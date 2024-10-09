@@ -8,6 +8,8 @@ import requests
 from playwright.async_api import async_playwright
 from playwright.async_api import Page
 
+from ..models import BookDataTree
+
 BROWSER_DATA_DIRECTORY = os.environ.get("BROWSER_DATA_DIRECTORY", "./user_data")
 DEBUG_MODE = False if os.environ.get("DEBUG_MODE",'false').lower() not in ['true','t','yes','y'] else True
 
@@ -54,7 +56,7 @@ async def download_audio_file(audio_url, headers, tag='', dir_path=''):
         print(f"Failed to download audio file. Status code: {response.status_code}", flush=True)
 
 
-async def get_bookmarks(context, page: Page, title='', download_path=''):
+async def get_bookmarks(context, page: Page, book: BookDataTree):
     '''
     Get bookmarks data for an audiobook.
     '''
@@ -68,7 +70,7 @@ async def get_bookmarks(context, page: Page, title='', download_path=''):
             response_body = response.request.post_data_json
             print("Response body:", response_body, flush=True)
             if response_body and 'value' in response_body:
-                with open(download_path, "w") as f:
+                with open(book.dir, "w") as f:
                     json.dump(response_body['value'], f)
 
     page.on("response", intercept_response)
@@ -76,7 +78,7 @@ async def get_bookmarks(context, page: Page, title='', download_path=''):
     # Open list of borrowed books
     await page.goto("https://libbyapp.com/tags/tag/%F0%9F%A7%BE")
 
-    title_split = title.split(' ') # may need to be changed
+    title_split = book.title.split(' ') # may need to be changed
     regex = re.compile('.*' + '.*'.join(title_split) + '.*', re.IGNORECASE)
     book_mentions = page.get_by_text(regex)
     await book_mentions.last.click()
@@ -101,12 +103,12 @@ async def get_bookmarks(context, page: Page, title='', download_path=''):
         pass
 
 
-async def download_audiobookmarks(page: Page, book_file, download_dir):
+async def download_audiobookmarks(page: Page, book: BookDataTree):
     '''
     Downloads the audio file for each bookmark.
     '''
 
-    with open(book_file, "r") as f:
+    with open(book.file, "r") as f:
         bookmarks_data = json.load(f)
 
     title_data = bookmarks_data['readingJourney']['title']
@@ -179,9 +181,9 @@ async def download_audiobookmarks(page: Page, book_file, download_dir):
     bookmarks = await get_bookmarks()
     assert len(bookmarks) == len(bookmark_list), "Number of bookmarks do not match."
     
-    audio_dir = os.path.join(download_dir, "audio")
-    if not os.path.exists(audio_dir):
-        os.makedirs(audio_dir)
+    # audio_dir = os.path.join(download_dir, "audio")
+    if not os.path.exists(book.audio_dir):
+        os.makedirs(book.audio_dir)
 
     bookmark_num = -1 # dummy value
 
@@ -194,7 +196,7 @@ async def download_audiobookmarks(page: Page, book_file, download_dir):
         audio_url = request.url
         headers = request.headers
 
-        await download_audio_file(audio_url, headers, bookmark_num, dir_path=audio_dir)
+        await download_audio_file(audio_url, headers, bookmark_num, dir_path=book.audio_dir)
         await route.continue_()
 
     # Intercept network requests
@@ -206,12 +208,12 @@ async def download_audiobookmarks(page: Page, book_file, download_dir):
 
     # Get bookmarks missed for whatever reason
     for bookmark_num in range(len(bookmarks),0,-1):
-        if not os.path.exists(os.path.join(audio_dir, f"audio_file_{bookmark_num}.mp3")):
+        if not os.path.exists(os.path.join(book.audio_dir, f"audio_file_{bookmark_num}.mp3")):
             bookmark_list = await select_bookmark(bookmarks_button, bookmark_num, bookmark_list)
 
     return bookmark_list
 
-async def get_audiobookmarks(title='', download_dir=''):
+async def get_audiobookmarks(book: BookDataTree):
     # First run the following command in the terminal:
     # google-chrome --remote-debugging-port=9222
     async with async_playwright() as p:
@@ -226,22 +228,22 @@ async def get_audiobookmarks(title='', download_dir=''):
         context.set_default_timeout(7000)
         page = context.pages[0]
 
-        file_title = title.replace(' ', '_').lower()
-        book_file = os.path.join(download_dir, f"{file_title}.json")
-        updated_file = book_file.replace(".json", "_updated.json")
+        # file_title = title.replace(' ', '_').lower()
+        # book_file = os.path.join(download_dir, f"{file_title}.json")
+        # updated_file = book_file.replace(".json", "_updated.json")
 
-        await get_bookmarks(context, page, title=title, download_path=book_file)
+        await get_bookmarks(context, page, book)
 
-        bookmark_list = await download_audiobookmarks(page, book_file, download_dir)
+        bookmark_list = await download_audiobookmarks(page, book)
 
         # Close the browser
         await browser.close()
 
-    with open(book_file, "r") as f:
+    with open(book.file, "r") as f:
         bookmarks_data = json.load(f)
 
     bookmarks_data['bookmarks'] = bookmark_list
-    with open(updated_file, "w") as f:
+    with open(book.updated_file, "w") as f:
         json.dump(bookmarks_data, f, indent=4)
 
     return bookmark_list
