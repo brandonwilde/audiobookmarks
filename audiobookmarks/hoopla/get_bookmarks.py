@@ -4,7 +4,7 @@ import re
 
 from playwright.sync_api import sync_playwright
 
-from ..models import HooplaBookDataTree
+from audiobookmarks.models import HooplaBookDataTree
 
 BROWSER_DATA_DIRECTORY = os.environ.get("BROWSER_DATA_DIRECTORY", "./user_data")
 DEBUG_MODE = False if os.environ.get("DEBUG_MODE",'false').lower() not in ['true','t','yes','y'] else True

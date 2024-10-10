@@ -8,7 +8,8 @@ import requests
 from playwright.async_api import async_playwright
 from playwright.async_api import Page
 
-from ..models import LibbyBookDataTree
+from audiobookmarks.models import LibbyBookDataTree
+
 
 BROWSER_DATA_DIRECTORY = os.environ.get("BROWSER_DATA_DIRECTORY", "./user_data")
 DEBUG_MODE = False if os.environ.get("DEBUG_MODE",'false').lower() not in ['true','t','yes','y'] else True
@@ -70,7 +71,7 @@ async def get_bookmarks(context, page: Page, book: LibbyBookDataTree):
             response_body = response.request.post_data_json
             print("Response body:", response_body, flush=True)
             if response_body and 'value' in response_body:
-                with open(book.dir, "w") as f:
+                with open(book.file, "w") as f:
                     json.dump(response_body['value'], f)
 
     page.on("response", intercept_response)
