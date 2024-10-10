@@ -2,7 +2,7 @@ import asyncio
 import json
 import os
 
-from models import BookDataTree
+from models import LibbyBookDataTree
 from libby.clean_transcripts import clean_transcripts
 from libby.create_notes import write_notes
 from libby.get_audio import get_audiobookmarks
@@ -14,7 +14,7 @@ NOTES_DIRECTORY = os.environ.get("NOTES_DIRECTORY", "")
 
 book_name = "Dark Territory"
 
-book = BookDataTree(BOOKS_DATA_DIRECTORY, book_name)
+book = LibbyBookDataTree(BOOKS_DATA_DIRECTORY, book_name)
     
 if not os.path.exists(book.dir):
     os.makedirs(book.dir)

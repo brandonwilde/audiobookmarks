@@ -4,13 +4,15 @@ import re
 
 from playwright.sync_api import sync_playwright
 
+from ..models import HooplaBookDataTree
+
 BROWSER_DATA_DIRECTORY = os.environ.get("BROWSER_DATA_DIRECTORY", "./user_data")
 DEBUG_MODE = False if os.environ.get("DEBUG_MODE",'false').lower() not in ['true','t','yes','y'] else True
 
 # If running in debug mode, first run the following command in the terminal:
 # google-chrome --remote-debugging-port=9222
 
-def get_bookmarks(title='', download_dir=''):
+def get_bookmarks(book: HooplaBookDataTree):
     '''
     Get bookmarks data for an audiobook.
     '''
@@ -33,9 +35,12 @@ def get_bookmarks(title='', download_dir=''):
             if "graphql" in response.url:
                 response_body = response.json()
                 data_type = list(response_body['data'].keys())[0]
-                if data_type in ['bookmarks', 'title']:
-                    with open(os.path.join(download_dir, f"{title}_{data_type}.json"), "w") as f:
-                        json.dump(response_body, f)
+                if data_type == 'bookmarks':
+                    file_path = book.bookmarks_file
+                elif data_type == 'title':
+                    file_path = book.title_file
+                with open(file_path, "w") as f:
+                    json.dump(response_body, f)
 
         page.on("response", intercept_response)
 
@@ -46,7 +51,7 @@ def get_bookmarks(title='', download_dir=''):
         page.wait_for_selector(f'text=Currently Borrowed')
 
         # Get audiobook links
-        book_name_split = title.split('_')
+        book_name_split = book.title.split(' ')
         regex = re.compile('.*' + '.*'.join(book_name_split) + '.*', re.IGNORECASE)
         book_tile = page.get_by_text(regex)
         book_tile.click()

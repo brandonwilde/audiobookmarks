@@ -8,7 +8,7 @@ import requests
 from playwright.async_api import async_playwright
 from playwright.async_api import Page
 
-from ..models import BookDataTree
+from ..models import LibbyBookDataTree
 
 BROWSER_DATA_DIRECTORY = os.environ.get("BROWSER_DATA_DIRECTORY", "./user_data")
 DEBUG_MODE = False if os.environ.get("DEBUG_MODE",'false').lower() not in ['true','t','yes','y'] else True
@@ -56,7 +56,7 @@ async def download_audio_file(audio_url, headers, tag='', dir_path=''):
         print(f"Failed to download audio file. Status code: {response.status_code}", flush=True)
 
 
-async def get_bookmarks(context, page: Page, book: BookDataTree):
+async def get_bookmarks(context, page: Page, book: LibbyBookDataTree):
     '''
     Get bookmarks data for an audiobook.
     '''
@@ -103,7 +103,7 @@ async def get_bookmarks(context, page: Page, book: BookDataTree):
         pass
 
 
-async def download_audiobookmarks(page: Page, book: BookDataTree):
+async def download_audiobookmarks(page: Page, book: LibbyBookDataTree):
     '''
     Downloads the audio file for each bookmark.
     '''
@@ -213,7 +213,7 @@ async def download_audiobookmarks(page: Page, book: BookDataTree):
 
     return bookmark_list
 
-async def get_audiobookmarks(book: BookDataTree):
+async def get_audiobookmarks(book: LibbyBookDataTree):
     # First run the following command in the terminal:
     # google-chrome --remote-debugging-port=9222
     async with async_playwright() as p:
