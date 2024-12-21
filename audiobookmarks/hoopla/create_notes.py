@@ -19,7 +19,10 @@ def write_notes(bookmarks, book_info, notes_dir):
         authors_str = "[[" + "]], [[".join(authors_clean) + "]]"
         f.write(f'''Author: "{authors_str}"\n''')
         f.write("---\n")
-        f.write(f"# {title}: {subtitle}\n")
+        if subtitle:
+            f.write(f"# {title}: {subtitle}\n")
+        else:
+            f.write(f"# {title}\n")
         f.write(f"### Synopsis\n")
         f.write(f"{synopsis}\n\n")
         f.write(f"---\n\n")

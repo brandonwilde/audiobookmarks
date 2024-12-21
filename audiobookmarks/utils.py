@@ -1,5 +1,7 @@
-from pydantic import BaseModel, PydanticUndefined
 from argparse import ArgumentParser
+from pydantic import BaseModel
+from pydantic_core import PydanticUndefined
+
 
 def generate_arg_parser(model: BaseModel) -> ArgumentParser:
     '''

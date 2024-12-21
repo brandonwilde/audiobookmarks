@@ -18,7 +18,11 @@ def get_bookmarks(book: HooplaBookDataTree):
     '''
     with sync_playwright() as p:
         if DEBUG_MODE:
-            browser = p.chromium.connect_over_cdp("http://127.0.0.1:9222")
+            try:
+                browser = p.chromium.connect_over_cdp("http://127.0.0.1:9222")
+            except Exception as e:
+                raise Exception(f"""Error connecting to browser. Make sure to first start the debug browser with `google-chrome --remote-debugging-port=9222`
+                {e}""")
             context = browser.contexts[0]
         else:
             context = p.chromium.launch_persistent_context(
@@ -39,6 +43,8 @@ def get_bookmarks(book: HooplaBookDataTree):
                     file_path = book.bookmarks_file
                 elif data_type == 'title':
                     file_path = book.title_file
+                else:
+                    return
                 with open(file_path, "w") as f:
                     json.dump(response_body, f)
 

@@ -55,7 +55,7 @@ OPENAI_API_KEY=your_api_key_here  # Required for audio transcription and quote e
 
 ## Usage
 
-### First-Time Setup
+> **First-Time Setup:**
 The first time you use this tool with either Libby or Hoopla, you must run it in debug mode (using the `--debug` flag) to manually sign in to your account. The browser session will be cached in your specified `BROWSER_DATA_DIRECTORY`, allowing subsequent runs to use these cached credentials automatically.
 
 Run the script using the following command:
