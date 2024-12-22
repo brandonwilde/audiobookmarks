@@ -8,19 +8,18 @@ from playwright.sync_api import sync_playwright
 from audiobookmarks.models import HooplaBookDataTree
 
 BROWSER_DATA_DIRECTORY = os.environ.get("BROWSER_DATA_DIRECTORY", "./user_data")
-DEBUG_MODE = False if os.environ.get("DEBUG_MODE",'false').lower() not in ['true','t','yes','y'] else True
 HOOPLA_USERNAME = os.environ.get("HOOPLA_USERNAME")
 HOOPLA_PASSWORD = os.environ.get("HOOPLA_PASSWORD")
 
 # If running in debug mode, first run the following command in the terminal:
 # google-chrome --remote-debugging-port=9222
 
-def get_bookmarks(book: HooplaBookDataTree):
+def get_bookmarks(book: HooplaBookDataTree, debug: bool = False):
     '''
     Get bookmarks data for an audiobook.
     '''
     with sync_playwright() as p:
-        if DEBUG_MODE:
+        if debug:
             try:
                 browser = p.chromium.connect_over_cdp("http://127.0.0.1:9222")
                 context = browser.contexts[0]

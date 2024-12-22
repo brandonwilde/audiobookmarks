@@ -34,9 +34,9 @@ def main(args: Args):
         os.environ["DEBUG_MODE"] = "false"
     
     if args.platform == "libby":
-        libby_main(args.book)
+        libby_main(args.book, args.debug)
     elif args.platform == "hoopla":
-        hoopla_main(args.book)
+        hoopla_main(args.book, args.debug)
 
 if __name__ == "__main__":
     parser = generate_arg_parser(Args)

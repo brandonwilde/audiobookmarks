@@ -12,14 +12,14 @@ BOOKS_DATA_DIRECTORY = os.environ.get("BOOKS_DATA_DIRECTORY", "")
 NOTES_DIRECTORY = os.environ.get("NOTES_DIRECTORY", "")
 
 
-def main(book_name):
+def main(book_name: str, debug: bool = False):
     book = LibbyBookDataTree(BOOKS_DATA_DIRECTORY, book_name)
         
     if not os.path.exists(book.dir):
         os.makedirs(book.dir)
 
     # Get audio files and bookmark position info
-    asyncio.run(get_audiobookmarks(book))
+    asyncio.run(get_audiobookmarks(book, debug))
 
     # Transcribe bookmarks
     with open(book.updated_file, 'r') as f:

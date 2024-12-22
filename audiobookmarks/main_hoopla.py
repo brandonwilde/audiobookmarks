@@ -8,12 +8,12 @@ from audiobookmarks.hoopla.create_notes import write_notes
 BOOKS_DATA_DIRECTORY = os.environ.get("BOOKS_DATA_DIRECTORY", "")
 NOTES_DIRECTORY = os.environ.get("NOTES_DIRECTORY", "")
 
-def main(book_name):
+def main(book_name: str, debug: bool = False):
     book = HooplaBookDataTree(BOOKS_DATA_DIRECTORY, book_name)
     if not os.path.exists(book.dir):
         os.makedirs(book.dir)
 
-    get_bookmarks(book)
+    get_bookmarks(book, debug)
 
     with open(book.bookmarks_file, "r") as f:
         bookmarks_data = json.load(f)['data']['bookmarks']

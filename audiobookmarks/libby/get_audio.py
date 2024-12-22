@@ -12,7 +12,6 @@ from audiobookmarks.models import LibbyBookDataTree
 
 
 BROWSER_DATA_DIRECTORY = os.environ.get("BROWSER_DATA_DIRECTORY", "./user_data")
-DEBUG_MODE = False if os.environ.get("DEBUG_MODE",'false').lower() not in ['true','t','yes','y'] else True
 
 # If running in debug mode, first run the following command in the terminal:
 # google-chrome --remote-debugging-port=9222
@@ -214,11 +213,11 @@ async def download_audiobookmarks(page: Page, book: LibbyBookDataTree):
 
     return bookmark_list
 
-async def get_audiobookmarks(book: LibbyBookDataTree):
+async def get_audiobookmarks(book: LibbyBookDataTree, debug: bool = False):
     # First run the following command in the terminal:
     # google-chrome --remote-debugging-port=9222
     async with async_playwright() as p:
-        if DEBUG_MODE:
+        if debug:
             browser = await p.chromium.connect_over_cdp("http://127.0.0.1:9222")
             context = browser.contexts[0]
         else:
