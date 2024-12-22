@@ -66,16 +66,14 @@ async def get_bookmarks(context, page: Page, book: LibbyBookDataTree):
         Intercepts network responses to get the bookmarks JSON.'''
         
         if "libbyjourney" in response.url:
-            print("Intercepted response.", flush=True)
             response_body = response.request.post_data_json
-            print("Response body:", response_body, flush=True)
             if response_body and 'value' in response_body:
                 with open(book.file, "w") as f:
                     json.dump(response_body['value'], f)
 
     page.on("response", intercept_response)
 
-    # Open list of borrowed books
+    # Open list of borrowed books (tag is an emoji)
     await page.goto("https://libbyapp.com/tags/tag/%F0%9F%A7%BE")
 
     title_split = book.title.split(' ') # may need to be changed
@@ -218,8 +216,15 @@ async def get_audiobookmarks(book: LibbyBookDataTree, debug: bool = False):
     # google-chrome --remote-debugging-port=9222
     async with async_playwright() as p:
         if debug:
-            browser = await p.chromium.connect_over_cdp("http://127.0.0.1:9222")
-            context = browser.contexts[0]
+            try:
+                browser = await p.chromium.connect_over_cdp("http://127.0.0.1:9222")
+                context = browser.contexts[0]
+            except Exception as e:
+                print("No open debug browser detected. Will run with visible browser, but if you would like the browser to persist between runs, start the debug browser with `google-chrome --remote-debugging-port=9222`")
+                context = await p.chromium.launch_persistent_context(
+                    user_data_dir=BROWSER_DATA_DIRECTORY,
+                    headless=False,
+                )
         else:
             context = await p.chromium.launch_persistent_context(
                 user_data_dir=BROWSER_DATA_DIRECTORY,  # Specify a directory to store user data
