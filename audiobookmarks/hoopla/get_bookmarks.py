@@ -67,13 +67,16 @@ def get_bookmarks(book: HooplaBookDataTree):
                     pass
 
         def navigate_and_login():
+            print("Navigating to Hoopla...", flush=True)
             page.goto("https://www.hoopladigital.com/my/borrowed")
             while app_start_time is None or (time.time() - app_start_time < 2.0 and not on_login_page):
                 page.wait_for_timeout(100)
             if on_login_page:
+                print("Logging in...", flush=True)
                 page.fill('input[name="email"]', HOOPLA_USERNAME)
                 page.fill('input[name="password"]', HOOPLA_PASSWORD)
                 page.click('button[type="submit"]')
+                print("Navigating to books...", flush=True)
                 page.wait_for_url("**/my/borrowed", wait_until="domcontentloaded")
 
         app_start_time = None
@@ -91,11 +94,13 @@ def get_bookmarks(book: HooplaBookDataTree):
         book_name_split = book.title.split(' ')
         regex = re.compile('.*' + '.*'.join(book_name_split) + '.*', re.IGNORECASE)
         book_tile = page.get_by_text(regex)
+        print("Getting book details...", flush=True)
         book_tile.click()
 
-        play_button = page.get_by_text(re.compile('play|resume', re.IGNORECASE))
+        play_button = page.get_by_text(re.compile('^play$|^resume$', re.IGNORECASE))
         play_button.click()
 
         page.get_by_role('button', name='Expand').click()
 
+        print("Getting bookmarks...", flush=True)
         page.get_by_role('button', name='Bookmarks Menu').click()

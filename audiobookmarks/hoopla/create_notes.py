@@ -37,17 +37,17 @@ def write_notes(bookmarks, book_info, notes_dir):
                 for bookmark in chapter_bookmarks:
                     bookmark_num += 1
                     book_seconds = bookmark['seconds']
-                book_time = time.strftime('%H:%M:%S', time.gmtime(book_seconds))
-                book_percent = round((book_seconds / duration) * 100, 2)
-                chapter_seconds = book_seconds - chapter_start
-                chapter_time = time.strftime('%H:%M:%S', time.gmtime(chapter_seconds))
-                chapter_percent = round((chapter_seconds / chapter_duration) * 100, 2)
+                    book_time = time.strftime('%H:%M:%S', time.gmtime(book_seconds))
+                    book_percent = round((book_seconds / duration) * 100, 2)
+                    chapter_seconds = book_seconds - chapter_start
+                    chapter_time = time.strftime('%H:%M:%S', time.gmtime(chapter_seconds))
+                    chapter_percent = round((chapter_seconds / chapter_duration) * 100, 2)
 
-                f.write(f"#### Bookmark {bookmark_num}\n")
-                f.write(f"*({chapter_time} \\[{chapter_percent}%\\] into chapter, {book_time} \\[{book_percent}%\\] into book)*\n")
-                if 'note' in bookmark:
-                    f.write(f"{bookmark['note']}\n")
-            f.write(f"\n---\n\n")
+                    f.write(f"#### Bookmark {bookmark_num}\n")
+                    f.write(f"*({chapter_time} \\[{chapter_percent}%\\] into chapter, {book_time} \\[{book_percent}%\\] into book)*\n")
+                    if 'note' in bookmark:
+                        f.write(f"{bookmark['note']}\n")
+                f.write(f"\n---\n\n")
 
         else:
             for bookmark in bookmarks:
