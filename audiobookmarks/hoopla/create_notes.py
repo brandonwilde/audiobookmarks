@@ -12,6 +12,10 @@ def write_notes(bookmarks, book_info, notes_dir):
     synopsis = book_info['synopsis']
     duration = book_info['seconds']
 
+    if ':' in title and not subtitle:
+        subtitle = title.split(':')[1].strip()
+        title = title.split(':')[0].strip()
+
     notes_file = os.path.join(notes_dir, f"{title}.md")
     with open(notes_file, "w") as f:
         f.write("---\n")
