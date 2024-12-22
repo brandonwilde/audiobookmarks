@@ -11,8 +11,6 @@ BROWSER_DATA_DIRECTORY = os.environ.get("BROWSER_DATA_DIRECTORY", "./user_data")
 HOOPLA_USERNAME = os.environ.get("HOOPLA_USERNAME")
 HOOPLA_PASSWORD = os.environ.get("HOOPLA_PASSWORD")
 
-# If running in debug mode, first run the following command in the terminal:
-# google-chrome --remote-debugging-port=9222
 
 def get_bookmarks(book: HooplaBookDataTree, debug: bool = False):
     '''
@@ -68,7 +66,8 @@ def get_bookmarks(book: HooplaBookDataTree, debug: bool = False):
         def navigate_and_login():
             print("Navigating to Hoopla...", flush=True)
             page.goto("https://www.hoopladigital.com/my/borrowed")
-            while app_start_time is None or (time.time() - app_start_time < 2.0 and not on_login_page):
+            page_load_timeout = 5.0
+            while app_start_time is None or (time.time() - app_start_time < page_load_timeout and not on_login_page):
                 page.wait_for_timeout(100)
             if on_login_page:
                 print("Logging in...", flush=True)
@@ -84,8 +83,11 @@ def get_bookmarks(book: HooplaBookDataTree, debug: bool = False):
         page.on("response", handle_page_load)
         navigate_and_login()
 
-        page.wait_for_selector("text=TERMS AND CONDITIONS OF USE")
-        page.click("text=ACCEPT")
+        try:
+            page.wait_for_selector("text=TERMS AND CONDITIONS OF USE")
+            page.click("text=ACCEPT")
+        except:
+            pass
 
         page.wait_for_selector(f'text=Currently Borrowed')
 
