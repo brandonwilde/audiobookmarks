@@ -34,6 +34,7 @@ def clean_transcripts(data):
     '''
     bookmarks = data['bookmarks']
     for bookmark in bookmarks:
+        print("\nCleaning transcript for bookmark {}...".format(bookmark['bookmark_num']), flush=True)
         transcript = bookmark['5m_transcript']
         if 'note' in bookmark:
             note = bookmark['note']

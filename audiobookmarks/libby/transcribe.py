@@ -53,6 +53,7 @@ def transcribe_audio_file(bookmark_number, data_dir):
 
     # Transcribe the clipped audio file
     clipped_file = os.path.join(data_dir, shortest_file.replace(".mp3", "_clip0-300.mp3"))
+    print(f"\nTranscribing audio file for bookmark {bookmark_number}...", flush=True)
     response = transcribe(clipped_file)
     return response.text
 
