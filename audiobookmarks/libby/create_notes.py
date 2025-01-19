@@ -1,4 +1,23 @@
 import os
+import re
+
+
+def split_authors(author_string, and_words=['and', 'und', 'y', 'e', 'et']):
+    '''
+    Split an author string into a list of authors.
+    '''
+    patterns = []
+    for word in and_words:
+        patterns.extend([
+            fr'\b{word}\b',
+            fr',\s*\b{word}\b'
+        ])
+    patterns.append(',')
+
+    regex_pattern = '|'.join(patterns)
+    authors = re.split(regex_pattern, author_string)
+    return [author.strip() for author in authors]
+
 
 def write_notes(bookmarks_data, notes_dir):
     '''
@@ -10,8 +29,12 @@ def write_notes(bookmarks_data, notes_dir):
 
     notes_file = os.path.join(notes_dir, f"{title}.md")
     with open(notes_file, "w") as f:
+        authors = split_authors(author) 
         f.write("---\n")
-        f.write(f'''Author: "[[{author.translate(str.maketrans('','','.'))}]]"\n''')
+        f.write(f'''Author: "[[{authors[0].translate(str.maketrans('','','.'))}]]"\n''')
+        if len(authors) > 1:
+            for i, author in enumerate(authors[1:], start=2):
+                f.write(f'''Author{i}: "[[{author.translate(str.maketrans('','','.'))}]]"\n''')
         f.write("---\n")
         # We assume the bookmarks are in order
         current_chapter = ''
