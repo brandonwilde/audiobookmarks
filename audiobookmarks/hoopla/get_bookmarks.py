@@ -22,7 +22,7 @@ def get_bookmarks(book: HooplaBookDataTree, debug: bool = False):
                 browser = p.chromium.connect_over_cdp("http://127.0.0.1:9222")
                 context = browser.contexts[0]
             except Exception as e:
-                print("No open debug browser detected. Will run with visible browser, but if you would like the browser to persist between runs, start the debug browser with `google-chrome --remote-debugging-port=9222`")
+                print("No open debug browser detected. Will run with visible browser, but if you would like the browser to persist between runs, first start the debug browser in another terminal with `google-chrome --remote-debugging-port=9222`")
                 context = p.chromium.launch_persistent_context(
                     user_data_dir=BROWSER_DATA_DIRECTORY,
                     headless=False,

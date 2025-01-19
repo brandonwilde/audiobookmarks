@@ -63,21 +63,21 @@ The first time you use this tool with Libby, you must run it in debug mode (usin
 Run the script using the following command:
 
 ```bash
-python main.py --platform <platform> --book <book_name> [--debug]
+python main.py <platform> <book_name> [--debug]
 ```
 
 Arguments:
-- `--platform`: The audiobook platform ("libby" or "hoopla")
-- `--book`: The name of the audiobook
+- `platform`: The audiobook platform ("libby" or "hoopla")
+- `book`: The name of the audiobook
 - `--debug`: (Optional) Run in debug mode with visible browser. Required for first-time setup.
 
 Example:
 ```bash
 # First time setup for Libby
-python main.py --platform libby --book "Project Hail Mary" --debug
+python main.py libby "Project Hail Mary" --debug
 
 # Subsequent runs can be headless
-python main.py --platform libby --book "Project Hail Mary"
+python main.py libby "Project Hail Mary"
 ```
 
 ## Output Format
