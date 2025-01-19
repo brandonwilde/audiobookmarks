@@ -160,11 +160,16 @@ async def download_audiobookmarks(page: Page, book: LibbyBookDataTree):
         chapter_num = await chapter.text_content()
         prog_in_chapter = await iframe.query_selector("span[class=\"chapter-bar-prev-text\"]")
         prog_text = await prog_in_chapter.text_content()
+        min_remaining = await iframe.query_selector("span[class=\"chapter-bar-next-text\"]")
+        min_remaining_text = await min_remaining.text_content()
+        
+        # Could also get minutes remaining in chapter here, calculate progress percentage
 
         bookmark_info = {
             "bookmark_num": num,
             "chapter_num": chapter_num,
             "minutes_in": prog_text.lower(),
+            "minutes_remaining": min_remaining_text.lower()
         }
         bm_info[num-1].update(bookmark_info)
 

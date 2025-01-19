@@ -20,7 +20,14 @@ def write_notes(bookmarks_data, notes_dir):
                 current_chapter = bookmark['chapter_num']
                 f.write(f"\n---\n\n")
                 f.write(f"## {current_chapter}\n")
-            f.write(f"#### Bookmark {bookmark['bookmark_num']} *({bookmark['minutes_in']} in)*\n")
+
+            minutes_in = int(bookmark['minutes_in'].strip('m'))
+            minutes_remaining = int(bookmark['minutes_remaining'].strip('m'))
+            chapter_length = minutes_in + minutes_remaining
+            chapter_percent = round((minutes_in / chapter_length) * 100)
+            book_percent = round((bookmark['percent'] * 100))
+            f.write(f"#### Bookmark {bookmark['bookmark_num']}\n")
+            f.write(f"*({bookmark['minutes_in']} \\[{chapter_percent}%\\] into chapter, \\[{book_percent}%\\] into book)*\n")
             if 'note' in bookmark:
                 f.write(f"**{bookmark['note']}**\n")
             f.write(f"{bookmark['quote']}\n")
