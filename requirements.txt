@@ -1,4 +1,4 @@
 aitools[openai] @ git+https://github.com/brandonwilde/ai-tools.git
-playwright==1.46.0
+playwright==1.49.1
 python-dotenv==1.0.1
 requests==2.32.3
