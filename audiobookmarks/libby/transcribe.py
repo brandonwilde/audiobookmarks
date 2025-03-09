@@ -45,6 +45,10 @@ def transcribe_audio_file(bookmark_number, data_dir):
     file_pattern = rf"audio_file_{bookmark_number}(_.*)?.mp3"
     audio_files = [f for f in os.listdir(data_dir) if re.match(file_pattern, f)]
     
+    if not audio_files:
+        print(f"No audio file found for bookmark {bookmark_number}", flush=True)
+        return "N/A"
+    
     # Assume shortest file is the one that starts at the bookmark
     shortest_file = min(audio_files, key=lambda f: get_duration(os.path.join(data_dir, f)))
     

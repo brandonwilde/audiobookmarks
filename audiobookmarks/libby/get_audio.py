@@ -79,7 +79,11 @@ async def get_bookmarks(context, page: Page, book: LibbyBookDataTree):
     title_split = book.title.split(' ') # may need to be changed
     regex = re.compile('.*' + '.*'.join(title_split) + '.*', re.IGNORECASE)
     book_mentions = page.get_by_text(regex)
-    await book_mentions.last.click()
+
+    try:
+        await book_mentions.last.click()
+    except:
+        raise Exception("Book not found. Please make sure you have entered the title exactly as it appears in Libby.")
 
     if 'open/loan' in page.url:
         title_id = page.url.split('/')[-1]
