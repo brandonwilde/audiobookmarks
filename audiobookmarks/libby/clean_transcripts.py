@@ -3,7 +3,7 @@ from aitools.media_tools.text_tools import prompt_llm
 prompt_template = """
 A note was taken while listening to an audiobook. A segment of the audiobook was then transcribed, starting before and ending after the note's timestamp. Your task is to read the note and then review the transcribed segment to find the relevant content. Extract this content as a quote that can be attached to the note.
 
-Please ensure that the quote is faithful to the original text and includes any content that could possibly be relevant or necessary to make sense of the quote. Do not change ANY of the original wording. Punctuation and formatting should be added as appropriate to make up for their loss in the transcription. The only other change you are allowed to make is to add ellipses (...) to indicate where irrelevant content has been removed, although this should be done sparingly.
+Please ensure that the quote is faithful to the original text and includes any content that provides relevant or useful context. Do not change ANY of the original wording. Punctuation and formatting should be added as appropriate to make up for their loss in the transcription. The only other change you are allowed to make is to add ellipses (...) to indicate where irrelevant content has been removed, although this should be done sparingly.
 
 Below are the note and the transcribed book segment:
 
