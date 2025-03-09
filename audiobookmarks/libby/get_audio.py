@@ -207,7 +207,7 @@ async def download_audiobookmarks(page: Page, book: LibbyBookDataTree):
         await route.continue_()
 
     # Intercept network requests
-    await page.route("**://*mediaclips*/**", intercept_audio)
+    await page.route("**://*audioclips*/**", intercept_audio)
     time.sleep(5)
 
     for bookmark_num in range(1,len(bookmarks)+1):
