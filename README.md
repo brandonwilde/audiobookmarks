@@ -50,20 +50,24 @@ Create a `.env` file in the root directory with the following variables:
 BOOKS_DATA_DIRECTORY=/path/to/store/book/data
 BROWSER_DATA_DIRECTORY=/path/to/store/browser/data # To bypass login after first run
 NOTES_DIRECTORY=/path/to/store/notes
-OPENAI_API_KEY=your_api_key_here  # Required for audio transcription and quote extraction
+OPENAI_API_KEY=your_api_key_here  # Required for audio
+OPENAI_ORGANIZATION=your_organization_key_here
 HOOPLA_USERNAME=your_hoopla_username
 HOOPLA_PASSWORD=your_hoopla_password
 ```
 
 ## Usage
 
-> **First-Time Setup:**
-The first time you use this tool with Libby, you must run it in debug mode (using the `--debug` flag) to manually sign in to your account. The browser session will be cached in your specified `BROWSER_DATA_DIRECTORY`, allowing subsequent runs to use these cached credentials automatically.
-
-Run the script using the following command:
+This tool currently only works in debug mode. First open Google Chrome in debug mode by running:
 
 ```bash
-python main.py <platform> <book_name> [--debug]
+google-chrome --remote-debugging-port=9222
+```
+
+Once the debug browser is open, you can run the script using the following command:
+
+```bash
+python main.py <platform> <book_name> --debug
 ```
 
 Arguments:
@@ -73,11 +77,7 @@ Arguments:
 
 Example:
 ```bash
-# First time setup for Libby
 python main.py libby "Project Hail Mary" --debug
-
-# Subsequent runs can be headless
-python main.py libby "Project Hail Mary"
 ```
 
 ## Output Format
