@@ -92,7 +92,7 @@ async def get_bookmarks(context, page: Page, book: LibbyBookDataTree):
     # Download bookmarks
     journey = await page.query_selector("button[class=\"title-journey-preview-button shibui-button halo\"]")
     await journey.click()
-    actions = page.get_by_role('button', name=re.compile('actions|aktionen', re.IGNORECASE))
+    actions = page.get_by_role('button', name='Actions', exact=True)
     await actions.click()
     buttons = await page.get_by_role('button').all()
     await buttons[1].click()
