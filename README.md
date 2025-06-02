@@ -48,9 +48,9 @@ playwright install
 Create a `.env` file in the root directory with the following variables:
 ```
 BOOKS_DATA_DIRECTORY=/path/to/store/book/data
-BROWSER_DATA_DIRECTORY=/path/to/store/browser/data # To bypass login after first run
+BROWSER_DATA_DIRECTORY=/path/to/store/browser/data # To store browser session data (and skip login)
 NOTES_DIRECTORY=/path/to/store/notes
-OPENAI_API_KEY=your_api_key_here  # Required for audio
+OPENAI_API_KEY=your_api_key_here  # Required for audio transcription
 OPENAI_ORGANIZATION=your_organization_key_here
 HOOPLA_USERNAME=your_hoopla_username
 HOOPLA_PASSWORD=your_hoopla_password
@@ -58,22 +58,37 @@ HOOPLA_PASSWORD=your_hoopla_password
 
 ## Usage
 
-This tool currently only works in debug mode. First open Google Chrome in debug mode by running:
+### First-Time Setup
 
-```bash
-google-chrome --remote-debugging-port=9222
-```
+The first time you use this tool, you'll need to:
 
-Once the debug browser is open, you can run the script using the following command:
-
+1. Run the script with the `--debug` flag:
 ```bash
 python main.py <platform> <book_name> --debug
 ```
 
-Arguments:
-- `platform`: The audiobook platform ("libby" or "hoopla")
-- `book`: The name of the audiobook
-- `--debug`: (Optional) Run in debug mode with visible browser. Required for first-time setup.
+2. When prompted, log in to your audiobook platform (Libby or Hoopla) in the browser window that opens.
+   - For Libby: You'll need to complete the login process manually
+   - For Hoopla: If you've set the environment variables, login will be automated
+
+3. Hit enter in your terminal to continue. The tool will save your session data to the `BROWSER_DATA_DIRECTORY` specified in your `.env` file.
+
+### Subsequent Usage
+
+After your first successful login:
+
+1. Run the script:
+```bash
+python main.py <platform> <book_name>
+```
+
+The tool will use your saved session data, so you won't need to log in again unless your session expires.
+
+### Command Arguments
+
+- `platform`: The audiobook platform (`libby` or `hoopla`)
+- `book_name`: The name of the audiobook (use quotes for multi-word titles)
+- `--debug`: Run in debug mode with visible browser (always required for now)
 
 Example:
 ```bash
@@ -113,3 +128,32 @@ Transcribed quote from the audiobook...
 ## Chapter 2
 #### Bookmark 2 *(2:15 in)*
 Transcribed quote from the audiobook...
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Session Expired**: If your saved session has expired, the tool will prompt you to log in again.
+
+2. **Book Not Found**: Ensure the book title matches exactly as it appears in your Libby or Hoopla library.
+
+3. **Audio Extraction Issues**: If the tool fails to extract audio properly:
+   - Try running the tool again
+   - Ensure your browser is properly displaying the audiobook player
+   - Check that the bookmark timestamps are correctly set in the platform
+
+4. **Transcription Errors**: If transcriptions are inaccurate:
+   - Check your OpenAI API key is valid
+   - Try running the tool again (results may vary)
+
+### Browser Data
+
+The tool stores browser session data in the directory specified by `BROWSER_DATA_DIRECTORY`. If you're experiencing persistent login issues, you can delete this directory to start fresh:
+
+```bash
+rm -rf /path/to/your/browser/data/directory
+```
+
+Then run the tool again with the `--debug` flag to complete a new login.

@@ -115,7 +115,10 @@ async def download_audiobookmarks(page: Page, book: LibbyBookDataTree):
 
     title_data = bookmarks_data['readingJourney']['title']
     title_id = title_data['titleId']
-    bookmarks = bookmarks_data['bookmarks']
+    try:
+        bookmarks = bookmarks_data['bookmarks']
+    except:
+        raise Exception(f"No bookmarks found. Are you sure you placed bookmarks in \"{title_data['text']}\"?")
     bookmark_list = sorted(bookmarks, key=lambda x: x['percent'])
 
     # Open the target book
@@ -126,8 +129,11 @@ async def download_audiobookmarks(page: Page, book: LibbyBookDataTree):
     open_book = await actions.query_selector("li:nth-child(2)")
     await open_book.click()
 
-    await page.wait_for_selector("iframe")
-    print("Page loaded.", flush=True)
+    try:
+        await page.wait_for_selector("iframe")
+        print("Page loaded.", flush=True)
+    except:
+        raise Exception("Failed to load audiobook player.")
 
     iframe_element = await page.query_selector("iframe")
     iframe = await iframe_element.content_frame()
@@ -224,12 +230,13 @@ async def download_audiobookmarks(page: Page, book: LibbyBookDataTree):
     return bookmark_list
 
 async def get_audiobookmarks(book: LibbyBookDataTree, debug: bool = False):
-    # First run the following command in the terminal:
-    # google-chrome --remote-debugging-port=9222
+    # Fetches bookmark data from libby
     async with async_playwright() as p:
+        browser = None
         if debug:
             try:
                 browser = await p.chromium.connect_over_cdp("http://127.0.0.1:9222")
+                print("Connected to existing browser: ", browser, flush=True)
                 context = browser.contexts[0]
             except Exception as e:
                 print("No open debug browser detected. Will run with visible browser, but if you would like the browser to persist between runs, start the debug browser with `google-chrome --remote-debugging-port=9222`")
@@ -238,6 +245,7 @@ async def get_audiobookmarks(book: LibbyBookDataTree, debug: bool = False):
                     headless=False,
                 )
         else:
+            print(f"Launching browser with user data directory: {BROWSER_DATA_DIRECTORY}")
             context = await p.chromium.launch_persistent_context(
                 user_data_dir=BROWSER_DATA_DIRECTORY,  # Specify a directory to store user data
                 headless=True,
@@ -245,16 +253,22 @@ async def get_audiobookmarks(book: LibbyBookDataTree, debug: bool = False):
         context.set_default_timeout(7000)
         page = context.pages[0]
 
-        # file_title = title.replace(' ', '_').lower()
-        # book_file = os.path.join(download_dir, f"{file_title}.json")
-        # updated_file = book_file.replace(".json", "_updated.json")
+        await page.goto("https://libbyapp.com/", wait_until="networkidle")
+
+        # Will redirect to libbyapp.com/shelf if logged in. Wait for redirect.
+        print("URL: ", page.url, flush=True)
+        if "shelf" not in page.url:
+            logged_in = input("It looks like you are not logged in. Please log in and hit enter once you are in.")
 
         await get_bookmarks(context, page, book)
 
         bookmark_list = await download_audiobookmarks(page, book)
 
-        # Close the browser
-        await browser.close()
+        # Close the browser or context properly
+        if browser:
+            await browser.close()
+        else:
+            await context.close()
 
     with open(book.file, "r") as f:
         bookmarks_data = json.load(f)

@@ -33,14 +33,13 @@ def main(args: Args):
     else:
         os.environ["DEBUG_MODE"] = "false"
     
-    if args.platform == "libby":
+    if args.platform.lower() == "libby":
         libby_main(args.book, args.debug)
-    elif args.platform == "hoopla":
+    elif args.platform.lower() == "hoopla":
         hoopla_main(args.book, args.debug)
 
 if __name__ == "__main__":
     parser = generate_arg_parser(Args)
     args = parser.parse_args()
-
     args_obj = Args(**vars(args))
     main(args_obj)
