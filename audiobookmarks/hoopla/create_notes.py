@@ -1,5 +1,6 @@
 import os
 import time
+from ..note_utils import format_author_header
 
 def write_notes(bookmarks, book_info, notes_dir):
     '''
@@ -18,11 +19,7 @@ def write_notes(bookmarks, book_info, notes_dir):
 
     notes_file = os.path.join(notes_dir, f"{title}.md")
     with open(notes_file, "w") as f:
-        f.write("---\n")
-        authors_clean = [author.translate(str.maketrans('','','.')) for author in authors]
-        authors_str = "[[" + "]], [[".join(authors_clean) + "]]"
-        f.write(f'''Author: "{authors_str}"\n''')
-        f.write("---\n")
+        f.write(format_author_header(authors))
         if subtitle:
             f.write(f"# {title}: {subtitle}\n")
         else:

@@ -1,6 +1,6 @@
 import os
 import re
-
+from ..note_utils import format_author_header
 
 def split_authors(author_string, and_words=['and', 'und', 'y', 'e', 'et']):
     '''
@@ -29,13 +29,8 @@ def write_notes(bookmarks_data, notes_dir):
 
     notes_file = os.path.join(notes_dir, f"{title}.md")
     with open(notes_file, "w") as f:
-        authors = split_authors(author) 
-        f.write("---\n")
-        f.write(f'''Author: "[[{authors[0].translate(str.maketrans('','','.'))}]]"\n''')
-        if len(authors) > 1:
-            for i, author in enumerate(authors[1:], start=2):
-                f.write(f'''Author{i}: "[[{author.translate(str.maketrans('','','.'))}]]"\n''')
-        f.write("---\n")
+        authors = split_authors(author)
+        f.write(format_author_header(authors))
         # We assume the bookmarks are in order
         current_chapter = ''
         for bookmark in bookmarks:
