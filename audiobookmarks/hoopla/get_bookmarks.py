@@ -40,7 +40,13 @@ def get_bookmarks(book: HooplaBookDataTree, debug: bool = False):
             Intercepts network responses to get the audio file.'''
             
             if "graphql" in response.url:
-                response_body = response.json()
+                try:
+                    response_body = response.json()
+                except Exception as e:
+                    print(f"Warning: Failed to parse response as JSON: {e}", flush=True)
+                    return
+                if not response_body['data']:
+                    return
                 data_type = list(response_body['data'].keys())[0]
                 if data_type == 'bookmarks':
                     file_path = book.bookmarks_file
@@ -52,6 +58,9 @@ def get_bookmarks(book: HooplaBookDataTree, debug: bool = False):
                     json.dump(response_body, f)
 
         def handle_page_load(response):
+            '''
+            Tracks app start and checks if on login page.
+            '''
             nonlocal app_start_time, on_login_page
             if response.url == "https://analytics.hoopladigital.com/patron/event":
                 try:
@@ -64,17 +73,38 @@ def get_bookmarks(book: HooplaBookDataTree, debug: bool = False):
                     pass
 
         def navigate_and_login():
+            '''
+            Navigates to the Hoopla "Currently Borrowed" page and logs in if necessary.
+            '''
+            nonlocal on_login_page
             print("Navigating to Hoopla...", flush=True)
             page.goto("https://www.hoopladigital.com/my/borrowed")
             page_load_timeout = 5.0
             while app_start_time is None or (time.time() - app_start_time < page_load_timeout and not on_login_page):
                 page.wait_for_timeout(100)
+            try:
+                page.wait_for_selector(f'text=Currently Borrowed')
+            except:
+                try:
+                    page.wait_for_selector("text=Login")
+                    if not on_login_page:
+                        print("It looks like you are not logged in. Navigating to login page...", flush=True)
+                        page.goto("https://www.hoopladigital.com/login")
+                        page.wait_for_selector("text=Password")
+                        on_login_page = True
+                except:
+                    print("Encountered an unexpected page. Please make sure you are logged in and have borrowed the audiobook.", flush=True)
+                    pass
             if on_login_page:
                 print("Logging in...", flush=True)
                 page.fill('input[name="email"]', HOOPLA_USERNAME)
                 page.fill('input[name="password"]', HOOPLA_PASSWORD)
                 page.click('button[type="submit"]')
-                print("Navigating to books...", flush=True)
+                print("Waiting for login to complete...", flush=True)
+                page.wait_for_function("!window.location.href.includes('login')")
+                if not "my/borrowed" in page.url:
+                    print("Navigating to books...", flush=True)
+                    page.goto("https://www.hoopladigital.com/my/borrowed")
                 page.wait_for_url("**/my/borrowed", wait_until="domcontentloaded")
 
         app_start_time = None
@@ -89,6 +119,7 @@ def get_bookmarks(book: HooplaBookDataTree, debug: bool = False):
         except:
             pass
 
+        # Should now be on the "Currently Borrowed" page
         page.wait_for_selector(f'text=Currently Borrowed')
 
         # Get audiobook links
