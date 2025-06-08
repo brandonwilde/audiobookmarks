@@ -58,39 +58,44 @@ HOOPLA_PASSWORD=your_hoopla_password
 
 ## Usage
 
-### First-Time Setup
+You can use the tool with either Libby or Hoopla. The basic usage is the same for both platforms, but the login process differs slightly.
 
-The first time you use this tool, you'll need to:
-
-1. Run the script with the `--debug` flag:
-```bash
-python main.py <platform> <book_name> --debug
-```
-
-2. When prompted, log in to your audiobook platform (Libby or Hoopla) in the browser window that opens.
-   - For Libby: You'll need to complete the login process manually
-   - For Hoopla: If you've set the environment variables, login will be automated
-
-3. Hit enter in your terminal to continue. The tool will save your session data to the `BROWSER_DATA_DIRECTORY` specified in your `.env` file.
-
-### Subsequent Usage
-
-After your first successful login:
-
-1. Run the script:
+The general usage is:
 ```bash
 python main.py <platform> <book_name>
 ```
 
-The tool will use your saved session data, so you won't need to log in again unless your session expires.
+### Hoopla
+
+If you have set the `HOOPLA_USERNAME` and `HOOPLA_PASSWORD` environment variables, login is automated. You can always run the tool with:
+```bash
+python main.py hoopla "<book_name>"
+```
+
+The tool will use your saved session data (stored in `BROWSER_DATA_DIRECTORY`), so you won't need to log in again unless your session expires.
+
+### Libby
+
+- **When Login is Needed:**  
+  Run in debug mode (`--debug`) any time you need to sign in with Libby. This includes the first time you use the tool, after deleting your browser session data, or if your login session expires.
+  ```bash
+  python main.py libby "<book_name>" --debug
+  ```
+  Follow the prompts to log in manually in the browser window. After login, hit enter in your terminal to continue. Your session will be saved for future runs.
+
+- **Already Signed In:**  
+  If you are already signed in, you can run without `--debug`:
+  ```bash
+  python main.py libby "<book_name>"
+  ```
 
 ### Command Arguments
 
 - `platform`: The audiobook platform (`libby` or `hoopla`)
 - `book_name`: The name of the audiobook (use quotes for multi-word titles)
-- `--debug`: Run in debug mode with visible browser (always required for now)
+- `--debug`: Run in debug mode with visible browser
 
-Example:
+Example run command:
 ```bash
 python main.py libby "Project Hail Mary" --debug
 ```
