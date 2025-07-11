@@ -9,7 +9,7 @@ from playwright.async_api import async_playwright
 from playwright.async_api import Page
 
 from audiobookmarks.models import LibbyBookDataTree
-
+from audiobookmarks.utils import short_pause
 
 BROWSER_DATA_DIRECTORY = os.environ.get("BROWSER_DATA_DIRECTORY", "./user_data")
 
@@ -74,14 +74,14 @@ async def get_bookmarks(context, page: Page, book: LibbyBookDataTree):
     page.on("response", intercept_response)
 
     # Open list of borrowed books (tag is an emoji)
-    await page.goto("https://libbyapp.com/tags/tag/%F0%9F%A7%BE")
+    # await page.goto("https://libbyapp.com/tags/tag/%F0%9F%A7%BE")
 
     title_split = book.title.split(' ') # may need to be changed
     regex = re.compile('.*' + '.*'.join(title_split) + '.*', re.IGNORECASE)
-    book_mentions = page.get_by_text(regex)
 
     try:
-        await book_mentions.last.click()
+        await short_pause()
+        await page.get_by_role("link", name=regex).first.click()
     except:
         raise Exception("Book not found. Please make sure you have entered the title exactly as it appears in Libby.")
 
@@ -90,12 +90,16 @@ async def get_bookmarks(context, page: Page, book: LibbyBookDataTree):
         await page.goto(f"https://libbyapp.com/tags/similar-{title_id}/page-1/{title_id}")
 
     # Download bookmarks
+    await short_pause()
     journey = await page.query_selector("button[class=\"title-journey-preview-button shibui-button halo\"]")
     await journey.click()
+    await short_pause()
     actions = page.get_by_role('button', name='Actions', exact=True)
+    await short_pause()
     await actions.click()
     buttons = await page.get_by_role('button').all()
     await buttons[1].click()
+    await short_pause()
 
     try:
         # needed in order to capture response, but doesn't exit gracefully
@@ -126,11 +130,14 @@ async def download_audiobookmarks(page: Page, book: LibbyBookDataTree):
 
     # Open the audiobook player
     actions = await page.query_selector("ul[class=\"title-details-actions-list\"]")
+    await short_pause()
     open_book = await actions.query_selector("li:nth-child(2)")
     await open_book.click()
+    await short_pause()
 
     try:
         await page.wait_for_selector("iframe")
+        await short_pause()
         print("Page loaded.", flush=True)
     except:
         raise Exception("Failed to load audiobook player.")
@@ -165,6 +172,7 @@ async def download_audiobookmarks(page: Page, book: LibbyBookDataTree):
         bookmark = bookmarks[num-1]
         print(f"Clicked bookmark {num}.", flush=True)
         await bookmark.click()
+        await short_pause()
         time.sleep(5)
         chapter = await iframe.query_selector("div[class=\"chapter-bar-title\"]")
         chapter_num = await chapter.text_content()
@@ -190,6 +198,7 @@ async def download_audiobookmarks(page: Page, book: LibbyBookDataTree):
     
     bookmarks_button = await iframe.query_selector("button[class=\"nav-action-item-button halo\"]")
     await bookmarks_button.click()
+    await short_pause()
     
     bookmarks = await get_bookmarks()
     assert len(bookmarks) == len(bookmark_list), "Number of bookmarks do not match."
@@ -258,7 +267,7 @@ async def get_audiobookmarks(book: LibbyBookDataTree, debug: bool = False):
         # Will redirect to libbyapp.com/shelf if logged in. Wait for redirect.
         print("URL: ", page.url, flush=True)
         if "shelf" not in page.url:
-            logged_in = input("It looks like you are not logged in. Please log in and hit enter once you are in.")
+            logged_in = input("It looks like you are not logged in. Please log in, navigate to your shelf if needed, and then hit enter.")
 
         await get_bookmarks(context, page, book)
 
