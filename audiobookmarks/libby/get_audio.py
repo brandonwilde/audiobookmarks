@@ -73,8 +73,7 @@ async def get_bookmarks(context, page: Page, book: LibbyBookDataTree):
 
     page.on("response", intercept_response)
 
-    # Open list of borrowed books (tag is an emoji)
-    # await page.goto("https://libbyapp.com/tags/tag/%F0%9F%A7%BE")
+    # Expected to be on shelf page at this point
 
     title_split = book.title.split(' ') # may need to be changed
     regex = re.compile('.*' + '.*'.join(title_split) + '.*', re.IGNORECASE)
