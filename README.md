@@ -1,4 +1,4 @@
-# AudioBookmarks
+# AudioBookmarks [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/brandonwilde/audiobookmarks)
 
 A personal Python tool for managing my audiobook bookmarks from various platforms. This is a personal project created for my own use and learning purposes.
 
