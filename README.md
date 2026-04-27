@@ -76,18 +76,23 @@ The tool will use your saved session data (stored in `BROWSER_DATA_DIRECTORY`), 
 
 ### Libby
 
-- **When Login is Needed:**  
-  Run in debug mode (`--debug`) any time you need to sign in with Libby. This includes the first time you use the tool, after deleting your browser session data, or if your login session expires.
-  ```bash
-  python main.py libby "<book_name>" --debug
-  ```
-  Follow the prompts to log in manually in the browser window. After login, hit enter in your terminal to continue. Your session will be saved for future runs.
+Libby requires real Google Chrome (for Widevine DRM support). The script connects to a running Chrome instance via the Chrome DevTools Protocol (CDP).
 
-- **Already Signed In:**  
-  If you are already signed in, you can run without `--debug`:
-  ```bash
-  python main.py libby "<book_name>"
-  ```
+**Step 1: Start Chrome with the debug port**
+
+```bash
+google-chrome --remote-debugging-port=9222 --user-data-dir=/path/to/audiobookmarks/debug_user_data &
+```
+
+> **Important:** You must pass `--user-data-dir` pointing to a dedicated directory (e.g. `debug_user_data/` inside this repo). Chrome will silently ignore `--remote-debugging-port` without this flag. Do **not** reuse the `BROWSER_DATA_DIRECTORY` path — that directory is used by Playwright and will conflict.
+
+The first time, log into Libby in the browser window that opens. If you have books checked out from multiple library cards, make sure all cards are connected — the tool can only see books visible on your shelf. Your session is saved in `debug_user_data/`, so you won't need to log in again on future runs.
+
+**Step 2: Run the tool**
+
+```bash
+python main.py libby "<book_name>" --debug
+```
 
 ### Command Arguments
 
@@ -142,7 +147,7 @@ Transcribed quote from the audiobook...
 
 1. **Session Expired**: If your saved session has expired, the tool will prompt you to log in again.
 
-2. **Book Not Found**: Ensure the book title matches exactly as it appears in your Libby or Hoopla library.
+2. **Book Not Found**: Ensure the book title matches exactly as it appears in your Libby or Hoopla library. If you have multiple library cards connected in Libby, make sure all cards are linked in the `debug_user_data` Chrome session — books from secondary library cards won't appear otherwise.
 
 3. **Audio Extraction Issues**: If the tool fails to extract audio properly:
    - Try running the tool again
@@ -155,10 +160,15 @@ Transcribed quote from the audiobook...
 
 ### Browser Data
 
-The tool stores browser session data in the directory specified by `BROWSER_DATA_DIRECTORY`. If you're experiencing persistent login issues, you can delete this directory to start fresh:
+The tool stores browser session data in different directories depending on platform:
+
+- Libby debug mode uses the Chrome profile directory passed to `--user-data-dir` (for example, `debug_user_data/`).
+- Hoopla and non-debug Playwright runs use `BROWSER_DATA_DIRECTORY`.
+
+If you're experiencing persistent login issues, delete the relevant directory to start fresh:
 
 ```bash
-rm -rf /path/to/your/browser/data/directory
+rm -rf /path/to/your/profile/directory
 ```
 
 Then run the tool again with the `--debug` flag to complete a new login.

@@ -1,6 +1,8 @@
+import asyncio
 import json
 import os
 import re
+import subprocess
 import time
 from typing import List
 import requests
@@ -12,9 +14,8 @@ from audiobookmarks.models import LibbyBookDataTree
 from audiobookmarks.utils import short_pause
 
 BROWSER_DATA_DIRECTORY = os.environ.get("BROWSER_DATA_DIRECTORY", "./user_data")
-
-# If running in debug mode, first run the following command in the terminal:
-# google-chrome --remote-debugging-port=9222
+DEBUG_BROWSER_DATA_DIRECTORY = os.environ.get("DEBUG_BROWSER_DATA_DIRECTORY", os.path.join(os.path.dirname(BROWSER_DATA_DIRECTORY), "debug_user_data"))
+CDP_URL = "http://127.0.0.1:9222"
 
 # audio files with a low start byte (5 digits) are usually the full chapter (minus the chapter number and title)
 # others are bookmarks (plus 2-3 seconds before the bookmark)
@@ -237,46 +238,64 @@ async def download_audiobookmarks(page: Page, book: LibbyBookDataTree):
 
     return bookmark_list
 
+async def _launch_chrome_debug():
+    print("Launching Google Chrome...", flush=True)
+    proc = subprocess.Popen(
+        ["google-chrome", "--remote-debugging-port=9222", f"--user-data-dir={DEBUG_BROWSER_DATA_DIRECTORY}"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    for _ in range(30):
+        try:
+            if requests.get(f"{CDP_URL}/json/version", timeout=1).status_code == 200:
+                return proc
+        except Exception:
+            pass
+        await asyncio.sleep(1)
+    proc.terminate()
+    raise Exception("Failed to start Google Chrome. Make sure it is installed.")
+
+
 async def get_audiobookmarks(book: LibbyBookDataTree, debug: bool = False):
-    # Fetches bookmark data from libby
     async with async_playwright() as p:
         browser = None
-        if debug:
-            try:
-                browser = await p.chromium.connect_over_cdp("http://127.0.0.1:9222")
-                print("Connected to existing browser: ", browser, flush=True)
+        context = None
+        chrome_process = None
+        attached_to_existing_debug_browser = False
+        try:
+            if debug:
+                try:
+                    browser = await p.chromium.connect_over_cdp(CDP_URL)
+                    attached_to_existing_debug_browser = True
+                except Exception:
+                    print("No open debug browser detected.", flush=True)
+                    chrome_process = await _launch_chrome_debug()
+                    browser = await p.chromium.connect_over_cdp(CDP_URL)
+                print(f"Connected to existing browser: {browser}", flush=True)
                 context = browser.contexts[0]
-            except Exception as e:
-                print("No open debug browser detected. Will run with visible browser, but if you would like the browser to persist between runs, start the debug browser with `google-chrome --remote-debugging-port=9222`")
+            else:
+                print(f"Launching browser with user data directory: {BROWSER_DATA_DIRECTORY}")
                 context = await p.chromium.launch_persistent_context(
                     user_data_dir=BROWSER_DATA_DIRECTORY,
-                    headless=False,
+                    headless=True,
                 )
-        else:
-            print(f"Launching browser with user data directory: {BROWSER_DATA_DIRECTORY}")
-            context = await p.chromium.launch_persistent_context(
-                user_data_dir=BROWSER_DATA_DIRECTORY,  # Specify a directory to store user data
-                headless=True,
-            )
-        context.set_default_timeout(7000)
-        page = context.pages[0]
+            context.set_default_timeout(7000)
+            page = context.pages[0]
 
-        await page.goto("https://libbyapp.com/", wait_until="networkidle")
+            await page.goto("https://libbyapp.com/", wait_until="networkidle")
+            print("URL: ", page.url, flush=True)
+            if "shelf" not in page.url:
+                input("It looks like you are not logged in. Please log in, navigate to your shelf if needed, and then hit enter.")
 
-        # Will redirect to libbyapp.com/shelf if logged in. Wait for redirect.
-        print("URL: ", page.url, flush=True)
-        if "shelf" not in page.url:
-            logged_in = input("It looks like you are not logged in. Please log in, navigate to your shelf if needed, and then hit enter.")
-
-        await get_bookmarks(context, page, book)
-
-        bookmark_list = await download_audiobookmarks(page, book)
-
-        # Close the browser or context properly
-        if browser:
-            await browser.close()
-        else:
-            await context.close()
+            await get_bookmarks(context, page, book)
+            bookmark_list = await download_audiobookmarks(page, book)
+        finally:
+            if browser and not attached_to_existing_debug_browser:
+                await browser.close()
+            elif context:
+                await context.close()
+            if chrome_process:
+                chrome_process.terminate()
 
     with open(book.file, "r") as f:
         bookmarks_data = json.load(f)
