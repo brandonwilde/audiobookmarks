@@ -14,6 +14,8 @@ from audiobookmarks.models import LibbyBookDataTree
 from audiobookmarks.utils import short_pause
 
 BROWSER_DATA_DIRECTORY = os.environ.get("BROWSER_DATA_DIRECTORY", "./user_data")
+# Separate from BROWSER_DATA_DIRECTORY because Google Chrome and Playwright's Chromium use
+# incompatible profile formats — sharing a directory between them causes launch failures.
 DEBUG_BROWSER_DATA_DIRECTORY = os.environ.get("DEBUG_BROWSER_DATA_DIRECTORY", os.path.join(os.path.dirname(BROWSER_DATA_DIRECTORY), "debug_user_data"))
 CDP_URL = "http://127.0.0.1:9222"
 

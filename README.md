@@ -160,10 +160,12 @@ Transcribed quote from the audiobook...
 
 ### Browser Data
 
-The tool stores browser session data in different directories depending on platform:
+The tool stores browser session data in two separate directories:
 
-- Libby debug mode uses the Chrome profile directory passed to `--user-data-dir` (for example, `debug_user_data/`).
-- Hoopla and non-debug Playwright runs use `BROWSER_DATA_DIRECTORY`.
+- **Libby** (`debug_user_data/` or `DEBUG_BROWSER_DATA_DIRECTORY`): used by Google Chrome via CDP.
+- **Hoopla** (`BROWSER_DATA_DIRECTORY`): used by Playwright's Chromium.
+
+These must be kept separate because Google Chrome and Playwright's Chromium use incompatible profile formats — pointing both at the same directory will cause launch failures.
 
 If you're experiencing persistent login issues, delete the relevant directory to start fresh:
 
