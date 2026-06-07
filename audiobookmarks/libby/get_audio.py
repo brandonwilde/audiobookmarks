@@ -3,7 +3,6 @@ import json
 import os
 import re
 import subprocess
-import time
 from typing import List
 import requests
 
@@ -43,14 +42,17 @@ async def download_audio_file(audio_url, headers, tag='', dir_path=''):
     Downloads the audio file from the given URL.
     '''
 
+    # Drop the Range header so we fetch the complete file, not a partial chunk.
+    headers = {k: v for k, v in (headers or {}).items() if k.lower() != "range"}
+
     response = requests.get(audio_url, headers=headers)
     if 200 <= response.status_code < 300:
         file_name = f"audio_file_{tag}.mp3"
-        if os.path.exists(file_name):
+        if os.path.exists(os.path.join(dir_path, file_name)):
             file_name = f"audio_file_{tag}_a.mp3"
-            if os.path.exists(file_name):
+            if os.path.exists(os.path.join(dir_path, file_name)):
                 file_name = f"audio_file_{tag}_b.mp3"
-                if os.path.exists(file_name):
+                if os.path.exists(os.path.join(dir_path, file_name)):
                     file_name = f"audio_file_{tag}_extra.mp3"
         with open(os.path.join(dir_path, file_name), "wb") as f:
             f.write(response.content)
@@ -161,11 +163,29 @@ async def download_audiobookmarks(page: Page, book: LibbyBookDataTree):
     async def get_bookmarks():
         return await iframe.query_selector_all("li[class=\"marks-dialog-mark data-mark-type_bookmark data-mark-color_none halos-anchor\"]")
 
+    async def jump_far_from(percent: float):
+        '''
+        Seek to a chapter at the opposite end of the book so the bookmark's audio
+        part gets evicted, forcing a fresh audioclips fetch when it's reselected.
+        '''
+        to_last = percent < 0.5
+        jumped = await iframe.evaluate("""(toLast) => {
+            const btns = document.querySelectorAll('button.seekometer-landmark-chapter');
+            if (!btns.length) return false;
+            (toLast ? btns[btns.length - 1] : btns[0]).click();
+            return true;
+        }""", to_last)
+        if jumped:
+            await asyncio.sleep(4)
+
     async def select_bookmark(open_bms, num, bm_info:List[dict]):
         '''
         Retrieves a bookmark's chapter number and position within chapter.
         Also triggers the audio file request.
         '''
+        # Move away first so selecting the bookmark forces a fresh audio fetch.
+        await jump_far_from(bm_info[num-1].get('percent', 0))
+
         bookmark_popup = await iframe.query_selector("div[class=\"navigation-shades\"]")
         if not await bookmark_popup.text_content():
             await open_bms.click()
@@ -175,7 +195,7 @@ async def download_audiobookmarks(page: Page, book: LibbyBookDataTree):
         print(f"Clicked bookmark {num}.", flush=True)
         await bookmark.click()
         await short_pause()
-        time.sleep(5)
+        await asyncio.sleep(5)
         chapter = await iframe.query_selector("div[class=\"chapter-bar-title\"]")
         chapter_num = await chapter.text_content()
         prog_in_chapter = await iframe.query_selector("span[class=\"chapter-bar-prev-text\"]")
@@ -211,32 +231,50 @@ async def download_audiobookmarks(page: Page, book: LibbyBookDataTree):
 
     bookmark_num = -1 # dummy value
 
+    # Audio request URL/headers keyed by bookmark. We only record here (not download)
+    # so the route handler returns immediately and doesn't stall the request.
+    captured_audio = {}
+
     async def intercept_audio(route, request):
         '''
-        Intercepts the audio file requests and downloads them.
+        Records the audio file request URL for the current bookmark.
         '''
         nonlocal bookmark_num
-
-        audio_url = request.url
-        headers = request.headers
-
-        await download_audio_file(audio_url, headers, bookmark_num, dir_path=book.audio_dir)
+        if bookmark_num >= 1:
+            captured_audio[bookmark_num] = (request.url, dict(request.headers))
         await route.continue_()
 
     # Intercept network requests
     await page.route("**://*audioclips*/**", intercept_audio)
-    time.sleep(5)
+    await asyncio.sleep(2)
+
+    async def download_for(num):
+        '''Download the audio captured for *num*, if not already on disk.'''
+        if os.path.exists(os.path.join(book.audio_dir, f"audio_file_{num}.mp3")):
+            return
+        info = captured_audio.get(num)
+        if not info:
+            print(f"No audio request captured for bookmark {num}.", flush=True)
+            return
+        url, headers = info
+        await download_audio_file(url, headers, num, dir_path=book.audio_dir)
 
     for bookmark_num in range(1,len(bookmarks)+1):
+        captured_audio.pop(bookmark_num, None)
         bookmark_list = await select_bookmark(bookmarks_button, bookmark_num, bookmark_list)
+        await download_for(bookmark_num)
 
     # Get bookmarks missed for whatever reason
     # This often happens because bookmarks are too close together and so a new audio file wasn't fetched.
     bookmark_num = 1
+    captured_audio.pop(bookmark_num, None)
     bookmark_list = await select_bookmark(bookmarks_button, bookmark_num, bookmark_list)
+    await download_for(bookmark_num)
     for bookmark_num in range(len(bookmarks),0,-1):
         if not os.path.exists(os.path.join(book.audio_dir, f"audio_file_{bookmark_num}.mp3")):
+            captured_audio.pop(bookmark_num, None)
             bookmark_list = await select_bookmark(bookmarks_button, bookmark_num, bookmark_list)
+            await download_for(bookmark_num)
 
     return bookmark_list
 
